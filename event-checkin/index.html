@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Check-In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 36px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    h1 { font-size: 22px; margin-bottom: 6px; color: #1a1a2e; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #ddd;
+      border-radius: 8px; font-size: 15px; margin-bottom: 18px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: #4f46e5; }
+    button {
+      width: 100%; padding: 12px; background: #4f46e5; color: white;
+      border: none; border-radius: 8px; font-size: 16px;
+      font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #4338ca; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .result { display: none; text-align: center; }
+    .result h2 { font-size: 18px; color: #333; margin-bottom: 12px; }
+    .number-box {
+      font-size: 72px; font-weight: 800; color: #4f46e5;
+      letter-spacing: 8px; margin: 16px 0;
+    }
+    .result p { color: #555; font-size: 14px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- FORM -->
+  <div id="formSection">
+    <h1>Event Check-In</h1>
+    <p class="subtitle">Fill in your details to receive your unique number.</p>
+
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="Your Name">
+
+    <label for="email">Email</label>
+    <input type="text" id="email" placeholder="Your Email">
+
+    <label for="zip">Zip Code</label>
+    <input type="text" id="zip" placeholder="Your Home Zip Code">
+
+    <label for="adult">Number of Adults</label>
+    <input type="text" id="adult" placeholder="How many adults in your group?">
+
+    <label for="youth">Number of Youth</label>
+    <input type="text" id="youth" placeholder="How many youth in your group?">
+
+    <p id="locationDisplay" style="font-size:14px; color:#555; margin-bottom:18px;"></p>
+    <input type="hidden" id="location">
+
+    <button id="submitBtn" onclick="handleSubmit()">Get My Number</button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultSection" class="result">
+    <h2>Here is your number.</h2>
+    <div class="number-box" id="numberDisplay"></div>
+    <p>Please write this down and add it to your chalk drawing.</p>
+  </div>
+
+</div>
+
+<script>
+  const SCRIPT_URL = '/.netlify/functions/submit';
+
+  window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const loc = params.get('location') || 'Unknown';
+    document.getElementById('location').value = loc;
+    document.getElementById('locationDisplay').textContent = '📍 ' + loc;
+  }
+
+  async function handleSubmit() {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const zip = document.getElementById('zip').value.trim();
+    const adult = document.getElementById('adult').value.trim();
+    const youth = document.getElementById('youth').value.trim();
+    const location = document.getElementById('location').value;
+
+    if (!name || !zip || !adult || !youth || !location) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ name, email, zip, adult, youth, location })
+      });
+      const data = await response.json();
+
+      document.getElementById('numberDisplay').textContent = data.number;
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Get My Number';
+    }
+  }
+</script>
+</body>
+</html>
